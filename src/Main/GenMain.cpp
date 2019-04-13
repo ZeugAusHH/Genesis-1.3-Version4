@@ -87,6 +87,7 @@ double genmain (string mainstring, string latstring, bool streaming, bool supres
 	  cout << " has started..." << endl;			
 	  cout << "Starting Time: " << ctime(&timer)<< endl;
           cout << "MPI-Comm Size: " << size << " nodes" << endl << endl;
+          cout << "Input file: " << mainstring << endl << endl;
         }
 
         //---------------------------------------------------------
