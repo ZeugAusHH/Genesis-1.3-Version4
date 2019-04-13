@@ -12,12 +12,20 @@ echo -n `whoami` >> $F
 echo -n " " >> $F
 echo -n `date "+%Y%m%dT%H%M"` >> $F
 echo -n " from git commit ID " >> $F
-git log --format="%H" -n 1 | tr -d '\n' >> $F
 
-# cl 20190223: "git status -s -u no" does not show the modified files?
-# Lines with untracked files begin with '??', ignore those.
-if [[ ! -z $(git status -s | grep --invert "^??") ]]; then
-	echo "# (uncommitted changes)" >> $F
+# handle the unlikely case that not git is installed
+if ! [ -x "$(command -v git)" ]; then
+	echo -n "unknown (git not installed?)" >> $F
+else
+	# git is installed ...
+
+	git log --format="%H" -n 1 | tr -d '\n' >> $F
+
+	# cl 20190223: "git status -s -u no" does not show the modified files?
+	# Lines with untracked files begin with '??', ignore those.
+	if [[ ! -z $(git status -s | grep --invert "^??") ]]; then
+		echo -n " (build includes uncommitted changes)" >> $F
+	fi
 fi
 # no final newline
 
