@@ -1,3 +1,4 @@
 *.o
 gencore
 lib
+build_info.cpp
