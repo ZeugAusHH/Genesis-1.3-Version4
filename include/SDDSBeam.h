@@ -38,7 +38,9 @@ class SDDSBeam: public StringProcessing, HDF5Base{
    void addParticles(vector< Particle > *, int);
    void analyse(double,int);
    void initRandomSeq(int);
+   int getNP(vector<Particle> *, int,int);
    double distance(Particle, Particle);
+   double distance_estimator(Particle, Particle, double, int*);
    RandomU *ran;
    int rank,size;
    double betax,betay,alphax,alphay,charge;
@@ -51,6 +53,7 @@ class SDDSBeam: public StringProcessing, HDF5Base{
    double gavg,xavg,yavg,pxavg,pyavg,xvar,yvar,pxvar,pyvar,xpx,ypy,ex,ey,ax,ay,bx,by;
    vector<double> t,g,x,y,px,py;
 
+   int verbose;
 };
 
 

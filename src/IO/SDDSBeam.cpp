@@ -23,6 +23,8 @@ SDDSBeam::SDDSBeam()
   align=0;
   aligns0=0;
   aligns1=0;
+
+  verbose=0;
 }
 
 SDDSBeam::~SDDSBeam(){}
@@ -51,6 +53,7 @@ void SDDSBeam::usage(){
   cout << " int align = 0 " << endl;
   cout << " double align_start = 0 " << endl;
   cout << " double align_end = 1 " << endl;
+  cout << " int verbose = 0 " << endl;
   cout << "&end" << endl << endl;
   return;
 }
@@ -106,6 +109,7 @@ bool SDDSBeam::init(int inrank, int insize, map<string,string> *arg, Beam *beam,
   if (arg->find("match")!=end)    {match = atob(arg->at("match").c_str()); arg->erase(arg->find("match"));}
   if (arg->find("center")!=end)   {center= atob(arg->at("center").c_str());arg->erase(arg->find("center"));}
   if (arg->find("settimewindow")!=end)   {settime= atob(arg->at("settimewindow").c_str());arg->erase(arg->find("settimewindow"));}
+  if (arg->find("verbose")!=end)  {verbose = atoi(arg->at("verbose").c_str()); arg->erase(arg->find("verbose"));}
 
 
 
@@ -452,7 +456,9 @@ bool SDDSBeam::init(int inrank, int insize, map<string,string> *arg, Beam *beam,
       }
 
     }
-   
+
+    if(verbose)
+       printf("***IBloop rank=%d islice=%d/%d\n", rank, islice+1, node_len);
   }
 
 
@@ -460,8 +466,24 @@ bool SDDSBeam::init(int inrank, int insize, map<string,string> *arg, Beam *beam,
   delete ran;
   delete [] work;
   
-  
+  if(verbose)
+     printf("***IBcompl rank=%d\n", rank);
 
+
+  /*
+   * C. Lechner (DESY), 2019-04-12
+   * If a few slices contain a pronounced current spike,
+   * then their preparation takes significantly longer.
+   *
+   * As the execution will pause anyhow in any future step
+   * requiring synchronization between processes, let's
+   * wait already here and avoid mixing of output from 
+   * importbeam and other parts of the code. Makes also
+   * debugging more convenient.
+   */
+  MPI::COMM_WORLD.Barrier();
+  if(rank==0)
+     cout << "importdistribution complete" << endl;
 
   return true;
 
@@ -554,15 +576,8 @@ void SDDSBeam::addParticles(vector<Particle> *beam, int mpart){
   int ndist0=ndist;
   while (ndist<mpart){
     int n1=static_cast<int>(floor(static_cast<double>(ndist0)*ran->getElement()));
-    double rmin=1e9;
-    int n2=n1;
-    for (int i=0; i<ndist0;i++){
-       double r=this->distance(beam->at(n1),beam->at(i)); 
-       if ((r<rmin) && ( i!=n1 )) {
-           n2=i;
-           rmin=r;
-       }
-    }
+    int n2=getNP(beam,ndist0,n1);
+
     par.gamma=0.5*(beam->at(n1).gamma+beam->at(n2).gamma)+(2*ran->getElement()-1)*(beam->at(n1).gamma-beam->at(n2).gamma);
     par.x =0.5*(beam->at(n1).x +beam->at(n2).x) +(2*ran->getElement()-1)*(beam->at(n1).x -beam->at(n2).x);
     par.px=0.5*(beam->at(n1).px+beam->at(n2).px)+(2*ran->getElement()-1)*(beam->at(n1).px-beam->at(n2).px);
@@ -587,11 +602,32 @@ void SDDSBeam::addParticles(vector<Particle> *beam, int mpart){
   return;
 }
 
+int SDDSBeam::getNP(vector<Particle> *beam, int ndist0, int n1)
+{
+    double rmin=1e9;
+    int n2=n1;
+    int i;
+    int sc_cntr=0;    // can be used to measure the effectiveness of the short-cut in distance_estimator
+
+    for (i=0; i<ndist0;i++){
+       double r;
+       // r=this->distance(beam->at(n1),beam->at(i));
+       r=this->distance_estimator(beam->at(n1),beam->at(i), rmin, &sc_cntr);
+       if ((r<rmin) && ( i!=n1 )) {
+           n2=i;
+           rmin=r;
+       }
+    }
+
+    // printf("XXX %d,%d\n", sc_cntr,ndist0);
+    return(n2);
+}
 
 double  SDDSBeam::distance(Particle p1, Particle p2){
+  double tmp,r;
 
-  double tmp=p1.gamma-p2.gamma;  
-  double r=tmp*tmp*ran->getElement();
+  tmp=p1.gamma-p2.gamma;  
+  r=tmp*tmp*ran->getElement();
   tmp=p1.x-p2.x;  
   r+=tmp*tmp*ran->getElement();
   tmp=p1.y-p2.y;  
@@ -600,7 +636,49 @@ double  SDDSBeam::distance(Particle p1, Particle p2){
   r+=tmp*tmp*ran->getElement();
   tmp=p1.py-p2.py;  
   r+=tmp*tmp*ran->getElement();
-  return r;
+  return(r);
+}
+
+/*
+ * C. Lechner (DESY) 2019-04-12
+ * Idea behind this optimization: Most of the particles will have a
+ *    (p1.gamma-p2.gamma)^2*randon_number
+ * exceeding the current minimum distance in the scan loop in getNP.
+ * Then there is no need to continue with more expensive math. But
+ * one has to keep in mind that the value is a lower threshold of
+ * the actual distance.
+ */
+double  SDDSBeam::distance_estimator(Particle p1, Particle p2, double rmin_current, int *sc_cntr){
+  double tmp,r;
+
+  tmp=p1.gamma-p2.gamma;
+  r=tmp*tmp*ran->getElement();
+
+  /*
+   * Check if we are already exceeding the current 'rmin' value in 'getNP'.
+   * As r will only increase further, we can then stop here as the particle
+   * will not be the new nearest particle.
+   */
+  if(r>rmin_current) {
+     (*sc_cntr)++;
+     return(r);
+  }
+
+  tmp=p1.x-p2.x;
+  r+=tmp*tmp*ran->getElement();
+  if(r>rmin_current) return(r);
+
+  tmp=p1.y-p2.y;
+  r+=tmp*tmp*ran->getElement();
+  if(r>rmin_current) return(r);
+
+  tmp=p1.px-p2.px;  
+  r+=tmp*tmp*ran->getElement();
+  if(r>rmin_current) return(r);
+
+  tmp=p1.py-p2.py;
+  r+=tmp*tmp*ran->getElement();
+  return(r);
 }
 
 
@@ -721,7 +799,7 @@ void SDDSBeam::analyse(double ttotal,int nsize)
 void SDDSBeam::initRandomSeq(int base)
 {
      RandomU rseed(base);
-     double val;
+     double val=0;	// avoids compile-time warning about 'val' being used uninitialized (the compiler does not know that 'rank' cannot be negative)
      for (int i=0; i<=rank+10000;i++){
         val=rseed.getElement();
      }
