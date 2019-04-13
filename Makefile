@@ -1,6 +1,9 @@
 #
 # GENESIS makefile
 #
+
+.PHONY: clean install beta
+
 # libraries
 #
 LIB= -lm -lstdc++ -lmpi_cxx -lfftw3
@@ -48,6 +51,7 @@ clean:
 	rm -f include/*~
 	rm -f *.o
 	rm -f lib/*.a
+	rm -f $(EXECUTABLE)
 
 install:
 	cp ./$(EXECUTABLE) ~/bin/genesis4
