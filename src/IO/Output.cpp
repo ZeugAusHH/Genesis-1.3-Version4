@@ -12,6 +12,8 @@
 
 extern bool MPISingle;
 
+const char *get_build_info(void);
+
 Output::Output(){
   fid=-1;
 }
@@ -92,6 +94,8 @@ void Output::writeMeta()
   tmp[0]=0;
   if (versionbeta) { tmp[0]=1;}
   this->writeSingleNode(gidsub,"Beta"," ",&tmp);
+  string build_info = get_build_info();
+  this->writeSingleNodeString(gidsub,"build_info", &build_info);
   H5Gclose(gidsub);  
   
   time_t timer;
