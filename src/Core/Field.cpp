@@ -93,6 +93,8 @@ void Field::initDiagnostics(int nz)
   nf_phi.resize(ns*nz);
   ff_intensity.resize(ns*nz);
   ff_phi.resize(ns*nz);
+
+  loc_energy.resize(nz);
 }
 
 
@@ -250,11 +252,14 @@ void Field::diagnostics(bool output)
 
   if (!output) { return; }
 
+  double trap_accu = 0; // for pulse energy calculation
+
   double shift=-0.5*static_cast<double> (ngrid);
   complex<double> loc;
   double loc2[2];
   int ds=field.size();
   int ioff=idx*ds;
+
 
   for (int is=0; is < ds; is++){
     int islice= (is+first) % ds ;   // include the rotation due to slippage
@@ -371,7 +376,27 @@ void Field::diagnostics(bool output)
     ff_intensity[ioff+is]=bfarfield;
     ff_phi[ioff+is]=bphiff;
 
+    /*** calculation of energy using trapezoidal rule: prepare partial sum for this process (later, rank=0 determines pulse energy value to be written to .out.h5 using MPI reduction operation) ***/
+    int mpirank, mpisize;
+    double trap_factor;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+
+    // trapezoidal rule: different prefactor if GLOBAL first or last data point of power profile
+    trap_factor = 1.0;                          //   (i) default case
+    if ((mpirank==0) && (is==0))                //  (ii) global first
+      trap_factor = 0.5;
+    if ((mpirank==(mpisize-1)) && (is==(ds-1))) // (iii) global last
+      trap_factor = 0.5;
+
+    trap_accu += trap_factor*bpower;  // remark: factors to obtain energy in joule are applied when the data is written to .out.h5 (see src/IO/Output.cpp)
+
+    // TEST DATA TO CHECK
+    // To reproduce in MATLAB: mpisize=432; nslices=36720; v=0:(mpisize-1); M=ones(nslices/mpisize,1)*(3+2*v.^2); MM=M(:); testvalue=trapz(MM);
+    // trap_accu += trap_factor * (3+2*mpirank*mpirank);
   }
+  loc_energy[idx] = trap_accu;
   
   idx++;
   

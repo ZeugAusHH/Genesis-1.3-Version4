@@ -53,6 +53,7 @@ class Field{
 
 
    vector<double> power,xsig,xavg,ysig,yavg ;  // buffer to accumulate before writing it out
+   vector<double> loc_energy; // buffer to accumulate energy summands local to this MPI process (energy of photon pulse is obtained by MPI reduction operation)
    vector<double> txsig,txavg,tysig,tyavg ;  // buffer to accumulate before writing it out
    vector<double> nf_intensity,nf_phi,ff_intensity,ff_phi;
 

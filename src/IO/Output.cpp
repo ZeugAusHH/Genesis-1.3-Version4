@@ -292,6 +292,20 @@ void Output::writeFieldBuffer(Field *field)
   this->writeBuffer(gid, "phase-farfield","rad",&field->ff_phi);
 
 
+  /*** for each integration step, store energy ***/
+  vector<double> energy_result;
+  const double speed_of_light = 299792458;
+  int nz = field->loc_energy.size(); // query number of integration steps (identical on all MPI processes)
+  energy_result.resize(nz);
+  MPI_Allreduce(&field->loc_energy[0], &energy_result[0], nz, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+  /* scale to energy value in joules (FIXME: need to handle cases with 'sample'!=1 in '&time') */
+  double dt = (field->xlambda*field->harm)/speed_of_light; /* lambdaref/c */
+  for(int j; j<nz; j++)
+    energy_result[j] *= dt;
+  this->writeSingleNode(gid, "energy", "arb. units", &energy_result); // still marked as arb. u. because sample!=1 needs to be handled correctly
+
+
 
   vector<double> tmp;
   tmp.resize(1);
