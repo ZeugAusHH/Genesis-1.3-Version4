@@ -1,4 +1,3 @@
-
 #include "writeFieldHDF5.h"
 
 extern bool MPISingle;
@@ -76,7 +75,7 @@ void WriteFieldHDF5::writeMain(string fileroot, Field *field){
   double ks=4.*asin(1)/field->xlambda;
   double scl=field->dgrid*eev/ks/sqrt(vacimp);
 
-
+  /*** dump complex field data to file ***/
   for (int i=0; i<ntotal;i++){
     s0=-1;
     char name[16];
@@ -103,10 +102,46 @@ void WriteFieldHDF5::writeMain(string fileroot, Field *field){
     }
     this->writeSingleNode(gid,"field-imag"," ",&work);     
 
-
-        
     H5Gclose(gid);
   }
+
+
+  /*** Compute xy intensity projection ***/
+  vector<double> local_int_xy(ngrid*ngrid);
+  vector<double> glbl_int_xy(ngrid*ngrid);
+
+#if 0
+  for (int i=0; i<ntotal; i++)
+  {
+    if (!((i>=smin) && (i<smax))) {
+      continue;
+    }
+#else
+  for (int i=smin; i<smax; i++)
+  {
+#endif
+    int islice= (i+field->first) % field->field.size() ;   // include the rotation due to slippage
+
+    complex<double> loc;
+    int fld_idx;
+    double wei;
+    for (int iy=0; iy<ngrid; iy++){
+      for (int ix=0; ix<ngrid; ix++){
+	fld_idx = iy*ngrid + ix;
+        loc=field->field.at(islice).at(fld_idx);
+        wei=loc.real()*loc.real()+loc.imag()*loc.imag();
+
+        local_int_xy[fld_idx] += wei;
+      }
+    }
+  }
+
+  MPI_Reduce(&local_int_xy[0], &glbl_int_xy[0], local_int_xy.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  // rank=0 process has the total sum. So only process 0 should write,
+  // this is controlled by 's0' variable (see code of function HDF5Base::writeSingleNode)
+  s0 = (rank==0) ? 0 : -1;
+  this->writeSingleNode(fid, "int_xy", " ", &glbl_int_xy); // every process calls this function to update meta data, but only process 0 writes (NOTE: for this to work, the data array must have identical size in every MPI process)
 
 
   H5Fclose(fid);
