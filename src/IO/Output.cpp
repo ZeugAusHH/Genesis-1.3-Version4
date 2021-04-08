@@ -301,7 +301,7 @@ void Output::writeFieldBuffer(Field *field)
 
   /* scale to energy value in joules (FIXME: need to handle cases with 'sample'!=1 in '&time') */
   double dt = (field->xlambda*field->harm)/speed_of_light; /* lambdaref/c */
-  for(int j; j<nz; j++)
+  for(int j=0; j<nz; j++)
     energy_result[j] *= dt;
   this->writeSingleNode(gid, "energy", "arb. units", &energy_result); // still marked as arb. u. because sample!=1 needs to be handled correctly
 
