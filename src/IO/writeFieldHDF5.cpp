@@ -106,7 +106,7 @@ void WriteFieldHDF5::writeMain(string fileroot, Field *field){
   }
 
 
-  /*** Compute xy intensity projection ***/
+  /*** Compute intensity projections ***/
   vector<double> local_int_xy(ngrid*ngrid);
   vector<double> glbl_int_xy(ngrid*ngrid);
   vector<double> int_xz(ngrid*field->field.size());
@@ -136,8 +136,8 @@ void WriteFieldHDF5::writeMain(string fileroot, Field *field){
 
         local_int_xy[idx_fld] += wei; // int_xy data has same dimension as field of slice => can use identical indexing scheme
 
-        idx_xz = field->field.size()*iy + (i-smin);
-        idx_yz = field->field.size()*ix + (i-smin);
+        idx_xz = field->field.size()*ix + (i-smin);
+        idx_yz = field->field.size()*iy + (i-smin);
         int_xz[idx_xz] += wei;
         int_yz[idx_yz] += wei;
       }
