@@ -299,11 +299,11 @@ void Output::writeFieldBuffer(Field *field)
   energy_result.resize(nz);
   MPI_Allreduce(&field->loc_energy[0], &energy_result[0], nz, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-  /* scale to energy value in joules (FIXME: need to handle cases with 'sample'!=1 in '&time') */
-  double dt = (field->xlambda*field->harm)/speed_of_light; /* lambdaref/c */
+  /* scale to energy value in joules */
+  double dt = field->slicelength/speed_of_light; /* slicelength/c (slicelength=sample*lambda1, with 'sample' set in '&time') */
   for(int j=0; j<nz; j++)
     energy_result[j] *= dt;
-  this->writeSingleNode(gid, "energy", "arb. units", &energy_result); // still marked as arb. u. because sample!=1 needs to be handled correctly
+  this->writeSingleNode(gid, "energy", "J", &energy_result);
 
 
 
