@@ -242,8 +242,12 @@ void Output::writeBeamBuffer(Beam *beam)
 
   if(beam->get_global_stat()) {
     gidsub=H5Gcreate(gid,"Global",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-    this->writeSingleNode(gidsub,"energy"," ", &beam->tot_gmean);
-    this->writeSingleNode(gidsub,"energyspread"," ", &beam->tot_gstd);
+    this->writeSingleNode(gidsub, "energy",       " ", &beam->tot_gmean);
+    this->writeSingleNode(gidsub, "energyspread", " ", &beam->tot_gstd);
+    this->writeSingleNode(gidsub, "xposition",    "m", &beam->tot_xmean);
+    this->writeSingleNode(gidsub, "xsize",        "m", &beam->tot_xstd);
+    this->writeSingleNode(gidsub, "yposition",    "m", &beam->tot_ymean);
+    this->writeSingleNode(gidsub, "ysize",        "m", &beam->tot_ystd);
     H5Gclose(gidsub);  
   }
   

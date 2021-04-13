@@ -73,6 +73,10 @@ void Beam::initDiagnostics(int nz)
 
   tot_gmean.resize(nz);
   tot_gstd.resize(nz);
+  tot_xmean.resize(nz);
+  tot_xstd.resize(nz);
+  tot_ymean.resize(nz);
+  tot_ystd.resize(nz);
 }
 
 // initialize the sorting routine
@@ -240,9 +244,13 @@ bool Beam::subharmonicConversion(int harmonic, bool resample)
 void Beam::diagnostics(bool output, double z)
 {
 #ifdef DO_BEAMSTATISTICS
-  double locaccu_bgavg=0, glblaccu_bgavg=0;
-  double locaccu_gvar=0,  glblaccu_gvar=0;
   unsigned long long locaccu_N=0, glblaccu_N=0;
+  double locaccu_bgavg=0, glblaccu_bgavg=0;
+  double locaccu_bgvar=0, glblaccu_bgvar=0;
+  double locaccu_bxavg=0, glblaccu_bxavg=0;
+  double locaccu_bxvar=0, glblaccu_bxvar=0;
+  double locaccu_byavg=0, glblaccu_byavg=0;
+  double locaccu_byvar=0, glblaccu_byvar=0;
 #endif
 
   if (!output) { return; }
@@ -287,8 +295,10 @@ void Beam::diagnostics(bool output, double z)
     }
 
 #ifdef DO_BEAMSTATISTICS
-    locaccu_bgavg += bgavg;
     locaccu_N     += nsize;
+    locaccu_bgavg += bgavg;
+    locaccu_bxavg += bxavg;
+    locaccu_byavg += byavg;
 #endif
 
     double scl=1;
@@ -337,8 +347,10 @@ void Beam::diagnostics(bool output, double z)
 
 #ifdef DO_BEAMSTATISTICS
   if(do_global_stat) {
-    MPI_Allreduce(&locaccu_bgavg, &glblaccu_bgavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(&locaccu_N,     &glblaccu_N,     1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&locaccu_bgavg, &glblaccu_bgavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&locaccu_bxavg, &glblaccu_bxavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&locaccu_byavg, &glblaccu_byavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     /*
      * 2nd pass of two-pass algorithm to obtain the variance of 'gamma' over the entire beam.
@@ -346,17 +358,30 @@ void Beam::diagnostics(bool output, double z)
      * 'Gamma' is the only phase space coordinate having a relatively large mean plus a small stddev.
      */
     double gmean = glblaccu_bgavg/glblaccu_N;
+    double xmean = glblaccu_bxavg/glblaccu_N;
+    double ymean = glblaccu_byavg/glblaccu_N;
     for (unsigned int is=0; is<ds; is++){
-      double gtmp=0;
+      double tmp=0;
       unsigned int nsize=beam.at(is).size();
       for (unsigned int i=0; i<nsize; i++){
-        gtmp = beam.at(is).at(i).gamma;
-        locaccu_gvar += (gtmp-gmean)*(gtmp-gmean);
+        tmp = beam.at(is).at(i).gamma;
+        locaccu_bgvar += (tmp-gmean)*(tmp-gmean);
+        tmp = beam.at(is).at(i).x;
+        locaccu_bxvar += (tmp-xmean)*(tmp-xmean);
+        tmp = beam.at(is).at(i).y;
+        locaccu_byvar += (tmp-ymean)*(tmp-ymean);
       }
     }
-    MPI_Allreduce(&locaccu_gvar, &glblaccu_gvar, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    double gvar = glblaccu_gvar/glblaccu_N;
+    MPI_Allreduce(&locaccu_bgvar, &glblaccu_bgvar, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&locaccu_bxvar, &glblaccu_bxvar, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&locaccu_byvar, &glblaccu_byvar, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    double gvar = glblaccu_bgvar/glblaccu_N;
     double gstd = sqrt(gvar);
+    double xvar = glblaccu_bxvar/glblaccu_N;
+    double xstd = sqrt(xvar);
+    double yvar = glblaccu_byvar/glblaccu_N;
+    double ystd = sqrt(yvar);
 
 #if 0
     int rank;
@@ -369,6 +394,10 @@ void Beam::diagnostics(bool output, double z)
 
     tot_gmean[idx] = gmean;
     tot_gstd[idx]  = gstd;
+    tot_xmean[idx] = xmean;
+    tot_xstd[idx]  = xstd;
+    tot_ymean[idx] = ymean;
+    tot_ystd[idx]  = ystd;
   }
 #endif
 
