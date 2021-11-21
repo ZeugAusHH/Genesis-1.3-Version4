@@ -196,7 +196,7 @@ The namelist {\tt setup} is a mandatory namelist and should be the first in the 
 
 \item {\bf exclude\_field\_dump} ({\it bool, false}): Flag to suppress writing of electric field distributions to the generated {\tt .fld.h5} files. If {\tt true}, electric field data is not stored, while all other objects, such as intensity projections, are still written to the {\tt .fld.h5} files.
 
-
+\item {\bf write\_semaphore\_file} ({\it bool, false}): If {\tt true}, an empty file is generated as the simulation is completed. The file name is derived from {\tt rootname} and has the extension {\tt .sema}. No file is written if the simulation aborts (examples are errors while parsing the input file or errors while executing commands), or if the simulation crashes (for example because of out-of-memory condition).
 
 
 \end{itemize}
