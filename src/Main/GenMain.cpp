@@ -406,5 +406,7 @@ int genmain (string mainstring, string latstring, string outstring, int in_seed,
           }
         }
 
+        // signal status of simulation to caller
+        ret = (successful_run) ? 0 : 1;
         return ret;
 }
