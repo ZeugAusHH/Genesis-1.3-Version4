@@ -65,7 +65,7 @@ bool MPISingle;  // global variable to do mpic or not
 int genmain (string mainstring, string latstring, string outstring, int in_seed, bool split) {
 
         meta_inputfile=mainstring;
-        double ret=0;
+        int ret=0;
     
         MPISingle=split;       
 	int rank,size;
@@ -407,5 +407,4 @@ int genmain (string mainstring, string latstring, string outstring, int in_seed,
         }
 
         return ret;
-
 }
