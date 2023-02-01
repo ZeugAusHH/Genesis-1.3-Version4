@@ -27,8 +27,9 @@ void EFieldSolver::init(double rmax_in, int ngrid_in, int nz_in, int nphi_in, do
 
 void EFieldSolver::longRange(Beam *beam, double gamma0, double aw) {
     int nsize = beam->beam.size();
+    int xx = beam->longESC.size();
     for (int i =0; i < nsize; i++){
-        beam->longESC[i]=0;
+        beam->longESC.at(i)=0;
     }
     if (!longrange) {
         return;
