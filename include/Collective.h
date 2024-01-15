@@ -41,7 +41,8 @@ private:
    std::vector<double> cur;
    int *count;
 
-
+   // statistics for debugging
+   unsigned long long loc_count_usage, loc_count_workaround;
 };
 
 inline bool Collective::hasWakeDefined() const{

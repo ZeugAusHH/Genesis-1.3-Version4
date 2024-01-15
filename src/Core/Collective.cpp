@@ -13,11 +13,23 @@ Collective::Collective()
   transient=false;
   ztrans=0;
   radius=1.0;
+  
+  loc_count_usage=0;
+  loc_count_workaround=0;
 }
 
 Collective::~Collective()
 {
     this->clearWake();
+
+    int rank;
+    unsigned long long glbl_count_usage=0, glbl_count_workaround=0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Reduce(&loc_count_usage, &glbl_count_usage, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&loc_count_workaround, &glbl_count_workaround, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    if(rank==0) {
+        cout << "Stats for Collective::update: Total workaround interventions: " << glbl_count_workaround << ", total calls: " << glbl_count_usage << endl;
+	}
 }
 
 void Collective::clearWake(){
@@ -130,7 +142,9 @@ void Collective::apply(Beam *beam, Undulator *und, double delz)
 
 
 void Collective::update(Beam *beam, double zpos)
-{  
+{
+  loc_count_usage++; // dbg stats
+
   // ---------------
   // step 0 - checks
   int nsNode=static_cast<int>(beam->current.size());
@@ -207,8 +221,9 @@ void Collective::update(Beam *beam, double zpos)
     int idx = floor(floorarg);
     /* workaround, use only until issue is fixed */
     if(idx<0) {
+        loc_count_workaround++; // dbg stats
         if(floorarg >= -1.0e-10) {
-			idx=0;
+            idx=0;
             cout << "workaround/hack in Collective.cpp: set idx=" << idx << ", floorarg=" << floorarg << endl;
         } else {
             cout << "!!! BADSTUFF in Collective.cpp: idx=" << idx << ", floorarg=" << floorarg << endl;
