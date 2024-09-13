@@ -34,7 +34,7 @@ void SDDSBeam::usage(){
   cout << " string file = <empty> " << endl;
   cout << " double charge   = 0 / <distribution file>" << endl;
   cout << " double slicewidth = 0.01" << endl;
-  cout << " bool settimewindow = true" << endl;
+  cout << " bool settimewindow = false" << endl;
   cout << " bool center = false " << endl;
   cout << " double gamma0 = gammaref " << endl;
   cout << " double x0 = 0 " << endl;
@@ -272,11 +272,10 @@ bool SDDSBeam::init(int inrank, int insize, map<string,string> *arg, Beam *beam,
   if (match) {
     if (rank==0){cout << "Matching external distribution..." << endl; }
     for (int i=0; i<nsize; i++){
-      if (!center){ gamma=-gavg;}
+      if (!center){ gamma=gavg;}
       double ratio=sqrt(gavg/gamma);
       g[i]+=gamma-gavg;  // take out center so that the rematching is correct
       x[i]-=xavg;
-      y[i]-=yavg;
       px[i]-=pxavg;
       py[i]-=pyavg;
       x[i]*=ratio;   // rescaling is needed to preserve emittance
