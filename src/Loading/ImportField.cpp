@@ -11,6 +11,7 @@ void ImportField::usage(){
   cout << "&importfield" << endl;
   cout << " string file = <empty>" << endl;
   cout << " int harmonic = 1" << endl;
+  cout << " double attenuation = 1.0" << endl;
   cout << " bool time = true" << endl;
   cout << " bool replace = false" << endl;
   cout << "&end" << endl << endl;
@@ -25,6 +26,7 @@ bool ImportField::init(int rank, int size, map<string,string> *arg, vector<Field
   int harm=1;
   bool dotime=true;
   bool force_replace=false;
+  double attenuation=1.0;
   double offset=0.;
 
   double lambda=setup->getReferenceLength();   // reference length for theta
@@ -36,6 +38,9 @@ bool ImportField::init(int rank, int size, map<string,string> *arg, vector<Field
   if (arg->find("time")!=end)    {dotime = atob(arg->at("time").c_str()); arg->erase(arg->find("time"));}
   if (arg->find("harmonic")!=end){harm = atoi(arg->at("harmonic").c_str()); arg->erase(arg->find("harmonic"));}
   if (arg->find("replace")!=end) {force_replace = atob(arg->at("replace").c_str()); arg->erase(arg->find("replace"));}
+  if (arg->find("attenuation")!=end)  {attenuation = atof(arg->at("attenuation").c_str()); arg->erase(arg->find("attenuation"));}
+  // if (arg->find("offset")!=end)  {offset = atof(arg->at("offset").c_str()); arg->erase(arg->find("offset"));}
+
   if (arg->size()!=0){
     if (rank==0){ cout << "*** Error: Unknown elements in &importfield" << endl; this->usage();}
     return false;
@@ -43,6 +48,10 @@ bool ImportField::init(int rank, int size, map<string,string> *arg, vector<Field
 
 
   ReadFieldHDF5 import;
+  import.attenuation = attenuation;
+  // deactivated
+  // import.offset = offset;
+
   bool check=import.readGlobal(rank, size, file, setup, time, harm, dotime);
   if (!check) { 
     import.close();
@@ -69,6 +78,7 @@ bool ImportField::init(int rank, int size, map<string,string> *arg, vector<Field
   if (idx<0)
   {
     if (rank==0) {cout << "Importing radiation field distribution from file: " << file << " ..." << endl; }
+    if (rank==0) {cout << "Using attenuation: " << attenuation << " and offset " << offset << endl; }
     field=new Field;
     fieldin->push_back(field);
     idx=fieldin->size()-1;

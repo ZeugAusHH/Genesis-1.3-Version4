@@ -36,14 +36,14 @@ private:
    double ds,dscur;
    unsigned int ns;
    int size,rank,ncur;
-   std::vector<double> wakeext, wakeint, wakeres, wakegeo, wakerou, wake, current, dcurrent;
+   //double *wakeext, *wakeint, *wakeres, *wakegeo, *wakerou, *wake, *current, *dcurrent;
+   // double *cur;
    std::vector<double> cur;
+   std::vector<double> wakeext, wakeint, wakeres,wakegeo,wakerou,wake,current,dcurrent;
    std::vector<int> count;
+//   int *count;
 
-   unsigned long long loc_count_workaround;
 
-   void resize_and_zero(std::vector<double>&, size_t);
-   void resize_and_zero_i(vector<int>& v, size_t n);
 };
 
 inline bool Collective::hasWakeDefined() const{

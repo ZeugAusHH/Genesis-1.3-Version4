@@ -491,10 +491,10 @@ int genmain (string inputfile, map<string,string> &comarg, bool split) {
         }
     }
 
-
     /*** clean up ***/
     delete timewindow;
     delete seq;
+    delete series;
     delete profile;
     delete lattice;
     delete alt;
