@@ -58,6 +58,15 @@ ls -l
 # exit 0
 
 # DEMO: report power at end of undulator (just a demo of what could be done)
+echo
+echo
 ./TEST_power.py
+RESULT=$?
+if [[ "$RESULT" -ne "0" ]] ; then
+	echo "test script with non-zero exit code, stopping"
+	exit 1
+fi
+echo
+echo
 
 ###
