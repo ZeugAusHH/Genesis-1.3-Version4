@@ -54,4 +54,8 @@ ls -l
 
 # TODO: next natural step would be to check if power in this seeded steady-state simulation grows approximately as we expect.
 
+
+python -m pip install --upgrade pip
+pip install h5py
+
 ###
