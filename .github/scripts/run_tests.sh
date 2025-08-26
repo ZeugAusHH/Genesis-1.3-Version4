@@ -52,10 +52,14 @@ echo "directory contents after G4 test run ..."
 ls -l
 
 
-# TODO: next natural step would be to check if power in this seeded steady-state simulation grows approximately as we expect.
+### TODO: next natural step would be to check if power in this seeded steady-state simulation grows approximately as we expect.
 
+# stop here
+# exit 0
 
+# DEMO: report power at end of undulator (just a demo of what could be done)
 python -m pip install --upgrade pip
 pip install h5py
+./TEST_power.py
 
 ###
