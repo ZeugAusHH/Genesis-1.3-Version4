@@ -58,8 +58,8 @@ ls -l
 # exit 0
 
 # DEMO: report power at end of undulator (just a demo of what could be done)
-python -m pip install --upgrade pip
-pip install h5py
+#python -m pip install --upgrade pip
+#pip install h5py
 ./TEST_power.py
 
 ###
