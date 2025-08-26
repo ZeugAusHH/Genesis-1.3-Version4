@@ -6,7 +6,7 @@
 import h5py as h5
 import sys
 
-# power value at end of simulated beamline (commit id 70be16d; Aug 6, 2025)
+# power value at end of simulated beamline (using files in commit id 70be16d; Aug 6, 2025)
 Ptest = 0.932785e9
 
 # permissible relative deviation
@@ -25,7 +25,6 @@ print(f'FEL power at the end of Example1 run: {Pfinal/1e9:.6f}GW')
 
 # relative deviations exceeding permissible limit result in exit code signalling error
 reldev = (Pfinal-Ptest)/Ptest
-reldev = 0.4 # test if error signalling works
 if abs(reldev)>maxreldev:
     print(f'relative deviation {reldev} exceeds limit of {maxreldev}')
     sys.exit(1)

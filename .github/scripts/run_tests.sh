@@ -20,7 +20,7 @@ G4=`realpath ./build/genesis4`
 # Run test case ('Example1-SteadyState': steady-state simulation, completes in approx 10s on CL's desktop PC)
 #
 # Currently this tests only for successful completion (the output itself
-# is not analyzed).
+# is analyzed in the next step).
 ###
 SEMAFILE="testrun.sema"
 RUNDIR="./examples/Example1-SteadyState/"
@@ -52,12 +52,15 @@ echo "directory contents after G4 test run ..."
 ls -l
 
 
-### TODO: next natural step would be to check if power in this seeded steady-state simulation grows approximately as we expect.
-
 # stop here
 # exit 0
 
-# DEMO: report power at end of undulator (just a demo of what could be done)
+###
+# analysis of simulation results
+# DEMO: report and check power at end of undulator
+# (reference value for check is coded in TEST_power.py script)
+###
+
 echo
 echo
 ./TEST_power.py
